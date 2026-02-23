@@ -1,17 +1,16 @@
-import { useRef, useState } from "react";
-import emailjs from "@emailjs/browser";
+import { useState } from "react";
 
 import TitleHeader from "../components/TitleHeader";
 import ContactExperience from "../components/models/contact/ContactExperience";
 
 const Contact = () => {
-  const formRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
     message: "",
   });
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,21 +20,24 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true); // Show loading state
-
     try {
-      await emailjs.sendForm(
-        import.meta.env.VITE_APP_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID,
-        formRef.current,
-        import.meta.env.VITE_APP_EMAILJS_PUBLIC_KEY
-      );
+      const apiBase = import.meta.env.VITE_API_URL || "http://localhost:4000";
+      const res = await fetch(`${apiBase}/api/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("Failed to send message");
 
       // Reset form and stop loading
       setForm({ name: "", email: "", message: "" });
+      alert("Message sent — I'll notify you when I check messages.");
     } catch (error) {
-      console.error("EmailJS Error:", error); // Optional: show toast
+      console.error("Send Error:", error);
+      alert("Failed to send message. Try again later.");
     } finally {
-      setLoading(false); // Always stop loading, even on error
+      setLoading(false);
     }
   };
 
@@ -50,7 +52,6 @@ const Contact = () => {
           <div className="xl:col-span-5">
             <div className="flex-center card-border rounded-xl p-10">
               <form
-                ref={formRef}
                 onSubmit={handleSubmit}
                 className="w-full flex flex-col gap-7"
               >
